@@ -1,5 +1,4 @@
 import random
-import time
 from itertools import combinations_with_replacement
 from queue import PriorityQueue
 
@@ -28,7 +27,8 @@ def MakeBoard(neighbors):  #tested
                             mine_number = mine_number + 1
                     solution[(r, c)] = mine_number   #Calculate numbers based on mine positions
         for key in solution.keys():
-            print (key + ":\t" + solution[key])
+            print (key) 
+            print (solution[key])
         return solution  
 
 
@@ -53,7 +53,8 @@ def FindNeighbors():  #tested
             neighbors[(r, c)] = set([(a, b) for a in range(r-1, r+2) for b in range(c-1, c+2)])
             neighbors[(r, c)].discard((r, c))
     for key in neighbors.keys():
-        print (key + ":\t" + neighbors[key])
+        print (key) 
+        print (neighbors[key])
     return neighbors
 
 
@@ -87,7 +88,7 @@ class State:  #state of the board as seen by a player
         mine_count = 0
         for neighbor in self.neighbors[pos]:
             if neighbor in self.positions:
-                if mines[neighbor] == True:
+                if self.mines[neighbor] == True:
                     mine_count = mine_count + 1
             return mine_count
     
@@ -189,6 +190,7 @@ class State:  #state of the board as seen by a player
                                 if pos2 in self.positions:
                                     self.mines[pos2] == self.solution[pos2]
                                     self.positions.append(pos2)
+                                    del node_list[pos2]
                                     print(pos2)
         
         return frontier, node_list
@@ -199,6 +201,7 @@ def Explore(state,node, neighbors, frontier, node_list, probabilities, prior_pro
         for neighbor in neighbors[node]:
             state.mines[neighbor] = state.solution[neighbor]
             state.positions.append(neighbor)
+            del node_list[neighbor]
             for n in neighbors[neighbor]:
                 probability = state.CalculateProbability(n, frontier, node_list, probabilities, prior_prob)
                 frontier.put((1-probability, n))
