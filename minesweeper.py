@@ -34,22 +34,28 @@ def MakeBoard(neighbors):  #tested
 
 def FindNeighbors():  #tested
     neighbors = dict([])  # build a dictionary of adjacent positions
-    neighbors[(0, 0)] = set([(a, b) for a in range(0, 2) for b in range (0, 2)])
+    neighbors[(0, 0)] = set([(a, b) for a in range(0, 2) for b in range (0, 2)]) #corners
     neighbors[(0, 0)].discard((0, 0))
+    neighbors[(9, 9)] = set([(a, b) for a in range(8, 10) for b in range (8, 10)])
+    neighbors[(9, 9)].discard((9, 9))
+    neighbors[(0, 9)] = set([(a, b) for a in range(0, 2) for b in range (8, 10)])
+    neighbors[(0, 9)].discard((0, 9))
+    neighbors[(9, 0)] = set([(a, b) for a in range(8, 10) for b in range (0, 2)])
+    neighbors[(9, 0)].discard((9, 0))
     for c in range(1, 10):   #first row
         neighbors[(0, c)] = set([(a, b) for a in range(0, 2) for b in range (c-1, c+2)])
         neighbors[(0, c)].discard((0, c))
     for r in range(1, 10):   #first column
         neighbors[(r, 0)] = set([(a, b) for a in range(r-1, r + 2) for b in range (0, 2)])
         neighbors[(r, 0)].discard((r, 0))
-    for c in range(1, 10):   #last row
+    for c in range(0, 9):   #last row
         neighbors[(9, c)] = set([(a, b) for a in range(8, 10) for b in range (c-1, c+2)])
         neighbors[(9, c)].discard((9, c))
-    for r in range(1, 10):   #last column
+    for r in range(0, 9):   #last column
         neighbors[(r, 9)] = set([(a, b) for a in range(r-1, r + 2) for b in range (8, 10)])
         neighbors[(r, 9)].discard((r, 9))
-    for r in range(1,10):
-        for c in range(1,10):  # for each position
+    for r in range(1,9):
+        for c in range(1,9):  # for each position
             neighbors[(r, c)] = set([(a, b) for a in range(r-1, r+2) for b in range(c-1, c+2)])
             neighbors[(r, c)].discard((r, c))
     for key in neighbors.keys():
@@ -65,6 +71,12 @@ def GetRandomSquare():  #tested
     number2 = random.randint(0, 9)
     print((number1, number2))
     return (number1, number2)
+
+
+def Normalize(values):
+        value1 = values[0]/(values[0] + values[1])
+        value2 = values[1]/(values[0] + values[1])
+        return(value1, value2)
     
        
 
@@ -93,8 +105,8 @@ class State:  #state of the board as seen by a player
             return mine_count
     
    
-    def CheckConsistency(self,model, node): #eliminates models that have too many mines next to a square
-        model[node] = True
+    def CheckConsistency(self,model, node, value): #eliminates models that have too many mines next to a square
+        model[node] = value
         for square in model.keys():
             for neighbor in neighbors[square]:
                 if model[square] == True:
@@ -111,36 +123,42 @@ class State:  #state of the board as seen by a player
             #(True) and no mine (False) in the frontier (same as node_list)
             values.append(True)
             values.append(False)
+        unique_combinations = []
         comb_list = list(combinations_with_replacement(values, int(len(values)/2)))
-        for j in range(0, len(comb_list)):
-            model = {}
-            for k in range (0, len(comb_list[j])):
-                for key in node_list.keys():
-                    if node_list[key] == k:
-                        model[key] = comb_list[j][k]
+        for i in range (0, len(comb_list)):
+            if comb_list[i] not in unique_combinations:
+                unique_combinations.append(comb_list[i])
+        mine = [True, False]
+        for a in range(0, len(mine)):
+            for j in range(0, len(unique_combinations)):
 
-            if model not in models:
-                if self.CheckConsistency( model, node) == True:
-                    models.append(model)
+                model = {}
+                for k in range (0, len(unique_combinations[j])):
+                    for key in node_list.keys():
+                        if key not in model.keys():
+                            model[key] = unique_combinations[j][k]
+
+                if model not in models:
+                    if self.CheckConsistency( model, node, mine[a]) == True:
+                        models[a].append(model)
         for m in models:
             print(m)
-        return models
-
-
-
+        return (models[0], models[1])
 
 
 
     def CalculateProbability(self,query,frontier, node_list, probabilities, prior_prob):
         #see pages 500-502/section 13.6 of textbook (3rd edition)
         models = self.GenerateModels(query, node_list)
-        model_probs = []
-        model_prob = 1
-        prob_sum = 0
-        for model in models:  #compares probabilities of possible models; only models consistent with
+        mine_probabilities = []
+        for m in range(0, len(models)):
+            model_prob = 1
+            prob_sum = 0
+            model_probs = []
+            for model in models[m]:  #compares probabilities of possible models; only models consistent with
             #the given information are considered
-            if model[query] == True:  #calculate probability of query being a mine
-                for square in node_list:
+             #calculate probability of query being a mine
+                for square in node_list.keys():
                     if square != query:  #search squares in frontier other than query
                         if model[square] == True:
                             if probabilities[node_list[square]] == 1: #one is default value
@@ -153,12 +171,13 @@ class State:  #state of the board as seen by a player
                             else:
                                 model_prob = model_prob *(1 - probabilities[node_list[square]])
                             
-            model_probs.append(model_prob)
-        for m in model_probs:
-            prob_sum = prob_sum + m
-        return prob_sum * prior_prob   #naive Bayes calculation- probability of a mine given evidence is probability
+                model_probs.append(model_prob)
+            for n in model_probs:
+                prob_sum = prob_sum + n
+            mine_probabilities.append(prob_sum * prior_prob)   #naive Bayes calculation- probability of a mine given evidence is probability
     #of evidence given probability of a mine multiplied by the prior probability
-
+        mine_probabilities2 = Normalize(mine_probabilities)
+        return mine_probabilities2[0]
     
        
                 
@@ -201,23 +220,24 @@ def Explore(state,node, neighbors, frontier, node_list, probabilities, prior_pro
         for neighbor in neighbors[node]:
             state.mines[neighbor] = state.solution[neighbor]
             state.positions.append(neighbor)
-            del node_list[neighbor]
+            if neighbor in node_list.keys():
+                del node_list[neighbor]
             for n in neighbors[neighbor]:
                 probability = state.CalculateProbability(n, frontier, node_list, probabilities, prior_prob)
                 frontier.put((1-probability, n))
-                node_list[n] = len(node_list) 
-                probabilities[len(node_list) - 1] = probability
+                node_list[n] = len(node_list) + len(state.positions)
+                probabilities[len(node_list) - 1 + len(state.positions)] = probability
                
     else:
         for n in neighbors[node]:
             if n not in state.positions:
                 probability = state.CalculateProbability(n, frontier, node_list, probabilities, prior_prob)
                 frontier.put((1 - probability, n)) #lowest probability of mine has priority
-                node_list[n] = len(node_list) 
-                probabilities[len(node_list) - 1] = probability
+                node_list[n] = len(node_list) + len(state.positions)
+                probabilities[len(node_list)  + len(state.positions)] = probability
                
         
-    del node_list[node]   
+    #del node_list[node]   
     return frontier, node_list, probability
 
 def search(state):
@@ -228,8 +248,8 @@ def search(state):
         square = GetRandomSquare()
         if state.solution[square] != True:
             frontier.put((1, square))
-            node_list[square] = len(node_list)
-            probabilities[len(node_list) - 1] = 1
+            node_list[square] = len(node_list) + len(state.positions)
+            probabilities[len(node_list) - 1  + len(state.positions)] = 1
 
             #state.mines[square] = state.solution[square]
             #state.positions.append(square)
@@ -241,6 +261,7 @@ def search(state):
         state.mines[node] = state.solution[node]
         print(node)
         state.positions.append(node)
+        del node_list[node]
         frontier, node_list = state.update(node, frontier, node_list)
         frontier, node_list, probabilities = Explore(state, node, neighbors, frontier, node_list, probabilities, 0.1)
         if frontier.empty():
@@ -252,7 +273,8 @@ def search(state):
                         return
                     else:
                         frontier.put((1, square))
-                        node_list[square] = len(node_list) 
+                        node_list[square] = len(node_list) + len(state.positions)
+                        probabilities[len(node_list) - 1  + len(state.positions)] = 1
     print('Found all mines')
 
 
