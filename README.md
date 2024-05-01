@@ -10,7 +10,7 @@ This is the repository for Project Team 11's Minesweeper Implementation.
 
 - Kenan Anderson
 
-This repository contains all submission items for the Project. In the Main Branch, the xxxx.py file contains our implementation for the Minesweeper Project. The xxx.pdf contains the pdf file for our 10 page Project Writeup. The xxx contains the Video/Presentation, the xxx contains the Presentation slidedeck, and the following link is for the Google Colab that will function as our demo. 
+This repository contains all submission items for the Project. In the Main Branch, the xxxx.py file contains our implementation for the Minesweeper Project. The CPTS440_Minesweeper_report.pdf contains the pdf file for our 10 page Project Writeup. The xxx contains the Video/Presentation, the CPTS440_Minesweeper_Presentation.ppx contains the Presentation slidedeck, and the following link is for the Google Colab that will function as our demo. 
 
 [Google Colab Notebook](https://colab.research.google.com/drive/1E8uVc0U50U84UgbxAPuJRPvtSlQncNSa?usp=sharing)
 
